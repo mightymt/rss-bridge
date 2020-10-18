@@ -2,10 +2,30 @@
 class DribbbleBridge extends BridgeAbstract {
 
 	const MAINTAINER = 'quentinus95';
-	const NAME = 'Dribbble popular shots';
+	const NAME = 'Dribbble';
 	const URI = 'https://dribbble.com';
 	const CACHE_TIMEOUT = 1800;
-	const DESCRIPTION = 'Returns the newest popular shots from Dribbble.';
+	const DESCRIPTION = 'Returns shots for a tag or the newest popular shots from Dribbble.';
+
+	const PARAMETERS = array(
+		'Popular shots' => array(),
+		'By tag' => array(
+			't' => array(
+				'name' => 'tag name',
+				'exampleValue' => 'website',
+				'required' => true
+			),
+			'sort' => array(
+				'name' => 'Sort by',
+				'type' => 'list',
+				'values' => array(
+					'Latest' => 'latest',
+					'Popular' => 'popular',
+				),
+				'defaultValue' => 'latest',
+			),
+		),
+	);
 
 	public function getIcon() {
 		return 'https://cdn.dribbble.com/assets/
@@ -13,7 +33,25 @@ favicon-63b2904a073c89b52b19aa08cebc16a154bcf83fee8ecc6439968b1e6db569c7.ico';
 	}
 
 	public function collectData(){
-		$html = getSimpleHTMLDOM(self::URI)
+		$url = '';
+
+		if ($this->queriedContext == 'By tag') {
+			$tag = preg_replace('/\s/i', '_', trim($this->getInput('t')));
+
+			if (strlen($tag) == 0) {
+				returnClientError('You must specify a tag!');
+			}
+
+			$url = self::URI . '/tags/' . urlencode($tag);
+			if ($this->getInput('sort') == 'latest') {
+				$url .= '?s=latest';
+			}
+		}
+		else {
+			$url = self::URI;
+		}
+
+		$html = getSimpleHTMLDOM($url)
 			or returnServerError('Error while downloading the website content');
 
 		$json = $this->loadEmbeddedJsonData($html);
@@ -95,5 +133,17 @@ favicon-63b2904a073c89b52b19aa08cebc16a154bcf83fee8ecc6439968b1e6db569c7.ico';
 
 	private function getFullSizeImagePath($preview_path){
 		return explode('?compress=1', $preview_path)[0];
+	}
+
+	public function getName(){
+	  // Name depends on queriedContext:
+		switch($this->queriedContext) {
+		case 'By tag':
+			return parent::getName() . ' / ' . htmlspecialchars(str_replace('_', ' ', $this->getInput('t')));
+		case 'Popular shots':
+			return 'Dribbble popular shots';
+		default:
+			return parent::getName();
+		}
 	}
 }
