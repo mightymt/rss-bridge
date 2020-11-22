@@ -26,6 +26,8 @@ class DribbbleBridge extends BridgeAbstract {
 			),
 		),
 	);
+	
+	private $tagName = '';
 
 	public function getIcon() {
 		return 'https://cdn.dribbble.com/assets/
@@ -36,13 +38,15 @@ favicon-63b2904a073c89b52b19aa08cebc16a154bcf83fee8ecc6439968b1e6db569c7.ico';
 		$url = '';
 
 		if ($this->queriedContext == 'By tag') {
-			$tag = preg_replace('/\s/i', '_', trim($this->getInput('t')));
+			$this->tagName = trim($this->getInput('t'));
 
-			if (strlen($tag) == 0) {
+			if (strlen($this->tagName) == 0) {
 				returnClientError('You must specify a tag!');
 			}
 
-			$url = self::URI . '/tags/' . urlencode($tag);
+			$this->tagName = ucwords(strtolower($this->tagName));
+
+			$url = self::URI . '/tags/' . urlencode(preg_replace('/\s/i', '_', $this->tagName));
 			if ($this->getInput('sort') == 'latest') {
 				$url .= '?s=latest';
 			}
@@ -139,7 +143,7 @@ favicon-63b2904a073c89b52b19aa08cebc16a154bcf83fee8ecc6439968b1e6db569c7.ico';
 	  // Name depends on queriedContext:
 		switch($this->queriedContext) {
 		case 'By tag':
-			return parent::getName() . ' / ' . htmlspecialchars(str_replace('_', ' ', $this->getInput('t')));
+			return 'Dribbble / ' . htmlspecialchars($this->tagName);
 		case 'Popular shots':
 			return 'Dribbble popular shots';
 		default:
